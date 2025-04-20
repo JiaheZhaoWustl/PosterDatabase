@@ -35,10 +35,10 @@ with the following structure:
 #To fine tune in cmd
 """ 
 python Script_DUD_Apr19.py ^
-  --input_dir "Poster Dataset/3D" ^
-  --output_file "poster_metadata_3D_test.jsonl" ^
+  --input_dir "PosterDataset" ^
+  --output_file "poster_metadata_test_APR21_Ver3.jsonl" ^
   --model gpt-4o ^
-  --github_base_url "https://raw.githubusercontent.com/JiaheZhaoWustl/PosterDatabase/main/Poster Dataset/3D"
+  --github_base_url "https://raw.githubusercontent.com/JiaheZhaoWustl/PosterDatabase/main/PosterDataset"
 """
 
 import os
@@ -51,13 +51,40 @@ import openai  # pip install openai>=1.14.0, currently 1.68.2
 
 # -------------------- 🔧 SYSTEM PROMPT -------------------- #
 DEFAULT_SYSTEM_PROMPT = (
-    "You are a graphic design analyst working on a poster analysis project. "
-    "For each poster image you receive, return STRICTLY a JSON object with the following keys:\n\n"
-    "1. 'decided': Facts a human client known before design — e.g. title, date/time, venue, visual direction keywords\n"
-    "2. 'undecided': Visual execution choices — e.g. typography treatment, layout, color interaction, texture, micro-info\n"
-    "3. 'lva': Layered Visual Analysis. Describe each layer of the poster (Layer 1, Layer 2, etc.) by imagining and expanding from the decided and undecided information with short, structured descriptions for future use of generating moodboard or posters\n\n"
-    "IMPORTANT: Return only valid JSON. No markdown, no commentary."
+    "You are a senior graphic design analyst. For each poster image, return a rich JSON object with three top-level keys:\n\n"
+    "1. 'decided': These are elements typically known or defined before the design process begins. Include standard fields such as:\n"
+    "- Title\n"
+    "- Date or Date Range\n"
+    "- Venue or Organizer\n"
+    "- Visual Direction (a list of aesthetic keywords: e.g., 'type-as-image', 'riso', '3D collage', 'psychedelic', 'brutalist')\n\n"
+    "You are encouraged to creatively include other fields relevant to the poster's context or genre, such as:\n"
+    "- Project Series or Event Theme\n"
+    "- Target Audience\n"
+    "- Genre or Category (e.g., rave flyer, museum show, student thesis, club event)\n"
+    "- Artistic Intent or Conceptual Theme\n"
+    "- Cultural Reference (if any)\n\n"
+    "Choose only the fields that feel relevant for the specific poster — don't repeat the same structure every time. You are allowed to infer thoughtfully if information is implied but not explicit.\n\n"
+    "2. 'undecided': These are visual decisions made during the design process. Include:\n"
+    "- Typography Treatment (e.g., warped, modular, calligraphic)\n"
+    "- Layout or Composition Logic\n"
+    "- Texture or Material Quality (e.g., photocopy, screen blend, vector crispness)\n"
+    "- Micro-Information Placement (where dates, locations, or QR codes appear)\n"
+    "- Visual Rhythm\n"
+    "- Type-Image Interaction\n"
+    "- Hierarchy and Focal Flow\n"
+    "- Emotional or Conceptual Tone\n\n"
+    "You may include any of these or add new subfields based on the specific visual behavior of the poster. Be creative and observational.\n\n"
+    "3. 'lva': Layered Visual Analysis. Describe the poster's construction as a sequence of 2-5 visual layers:\n"
+    "Layer 1 (Background), Layer 2 (Main Forms), Layer 3 (Typographic Overlays), Layer 4 (Micro-details), etc.\n"
+    "Each layer should be a **short paragraph (2-4 sentences)** describing:\n"
+    "- What visual material appears in that layer\n"
+    "- How it is composed and styled\n"
+    "- Its role in the spatial or narrative hierarchy\n"
+    "- Its texture, contrast, position, and interaction with other layers\n\n"
+    "This section should read like a design breakdown, focusing on how the poster is built and experienced visually.\n\n"
+    "🎯 Overall, your job is to combine structured description with interpretive insight — as if preparing archival metadata for a creative research tool. Do not output markdown, code fences, or commentary. Return only valid JSON."
 )
+
 
 # -------------------- POSTER ANALYSIS FUNCTION -------------------- #
 def analyse_poster(image_url: str, model: str, system_prompt: str) -> dict:
@@ -87,7 +114,7 @@ def analyse_poster(image_url: str, model: str, system_prompt: str) -> dict:
             model=model,
             messages=messages,
             temperature=0.2,
-            max_tokens=1000,
+            max_tokens=2000, #--------------IMPORTANT-----------------#
         )
     except openai.OpenAIError as e:
         print(f"🛑 OpenAI API error: {e}")
