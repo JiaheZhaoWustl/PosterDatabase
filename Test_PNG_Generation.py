@@ -49,11 +49,12 @@ except Exception as e:
 print("🎨 Generating image from refined prompt...")
 try:
     response = client.images.generate(
-        model="dall-e-3",
+        model="gpt-image-1",
         prompt=refined_prompt,
         n=1,
         size="1024x1024",
-        response_format="url"
+        response_format="url",
+        quality="high"
     )
 except Exception as e:
     print("❌ Error generating image:", e)
@@ -71,6 +72,8 @@ try:
 except Exception as e:
     print(f"❌ Error downloading image: {e}")
     exit(1)
+
+    
 
 # Step 5: Remove background using remove.bg API
 output_path = "poster_visual_transparent_MAY7.png"
