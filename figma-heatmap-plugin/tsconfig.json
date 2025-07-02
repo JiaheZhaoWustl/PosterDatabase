@@ -111,3 +111,14 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   }
 }
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "es2020",
+    "lib": ["es2020", "dom"],
+    "types": ["@figma/plugin-typings"],
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}
+
