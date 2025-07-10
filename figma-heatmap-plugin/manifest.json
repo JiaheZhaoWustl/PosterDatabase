@@ -1,7 +1,0 @@
-{
-  "name": "HeatMap-Caller",
-  "id":   "heatmap-caller",
-  "api":  "1.0.0",
-  "main": "dist/code.js",
-  "editorType": ["figma"]
-}

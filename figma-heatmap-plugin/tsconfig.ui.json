@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "lib": ["dom", "es2020"],
-    "outDir": "dist/ui"
-  },
-  "include": ["src/ui.tsx"]
-}
