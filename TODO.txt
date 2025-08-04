@@ -1,0 +1,6 @@
+Aug. 4th
+
+1. Midjourney reword when finalized prompt
+2. Skip question button
+3. Hide updated prompt in the chat
+4. show text changes on the left display

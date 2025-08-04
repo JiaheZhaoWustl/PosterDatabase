@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Refinement Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .prompt-section {
+            flex: 1;
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .section-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .prompt-display {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+        }
+
+        .prompt-version {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .prompt-version.updated {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .prompt-version.initial {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        .prompt-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .prompt-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .prompt-input-container {
+            margin-top: auto;
+        }
+
+        .prompt-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .prompt-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .prompt-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .chat-input-container {
+            margin-top: auto;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .control-button {
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .control-button:hover {
+            background: #e0e0e0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            border: 1px solid #e0e0e0;
+            max-width: 70%;
+            margin-bottom: 15px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .status-indicator {
+            background: #e8f5e8;
+            color: #2d5a2d;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+                 .status-indicator.waiting {
+             background: #fff3cd;
+             color: #856404;
+         }
+
+         .prompt-info {
+             background: #f8f9fa;
+             border-radius: 10px;
+             padding: 15px;
+             border: 2px solid #e0e0e0;
+         }
+
+         .prompt-info p {
+             margin: 5px 0;
+             font-size: 0.9rem;
+             color: #666;
+             line-height: 1.4;
+         }
+
+         .prompt-info p:first-child {
+             color: #333;
+             font-weight: 600;
+         }
+
+         .option-buttons {
+             display: flex;
+             flex-wrap: wrap;
+             gap: 8px;
+             margin: 15px 0;
+             padding: 15px;
+             background: #f8f9fa;
+             border-radius: 10px;
+             border: 2px solid #e0e0e0;
+         }
+
+         .option-buttons-title {
+             width: 100%;
+             font-size: 0.9rem;
+             color: #666;
+             margin-bottom: 10px;
+             font-weight: 600;
+         }
+
+         .option-button {
+             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+             color: white;
+             border: none;
+             padding: 8px 16px;
+             border-radius: 20px;
+             cursor: pointer;
+             font-size: 12px;
+             font-weight: 500;
+             transition: transform 0.2s, opacity 0.2s;
+             white-space: nowrap;
+         }
+
+         .option-button:hover {
+             transform: translateY(-1px);
+             opacity: 0.9;
+         }
+
+         .option-button:active {
+             transform: translateY(0);
+         }
+
+         .option-button.disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+             transform: none;
+         }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Prompt Section -->
+        <div class="prompt-section">
+            <div class="section-header">
+                <h2>🎯 Prompt Evolution</h2>
+                <p>Watch your prompt refine in real-time</p>
+            </div>
+            
+            <div class="prompt-display" id="promptDisplay">
+                <div class="status-indicator" id="statusIndicator">
+                    Ready to start prompt refinement
+                </div>
+                <!-- Prompt versions will be added here -->
+            </div>
+            
+                         <div class="prompt-input-container">
+                 <div class="prompt-info">
+                     <p>💡 <strong>How it works:</strong></p>
+                     <p>1. Type your initial prompt in the chat below</p>
+                     <p>2. AI will ask questions to refine it</p>
+                     <p>3. Watch your prompt evolve here</p>
+                 </div>
+             </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div class="section-header">
+                <h2>💬 Conversation</h2>
+                <p>Answer AI questions to refine your prompt</p>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                                         <div class="message-content">
+                         Hello! I'm your prompt refinement assistant. Type your prompt below and I'll ask questions to help refine it. Watch the left panel to see your prompt evolve in real-time.
+                     </div>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <span style="margin-left: 8px; font-size: 12px;">AI is thinking...</span>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <form class="chat-input-form" id="chatForm">
+                                                             <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Type your initial prompt or continue refining..."
+                        autocomplete="off"
+                    >
+                                         <button type="submit" class="send-button" id="chatSendButton">
+                         Send
+                     </button>
+                </form>
+                
+                                 <div class="controls">
+                     <button class="control-button" onclick="resetAll()">Reset All</button>
+                     <button class="control-button" onclick="exportConversation()">Export</button>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let conversationHistory = [];
+        let currentPrompt = '';
+        let isWaitingForResponse = false;
+        let promptVersion = 0;
+        let isInitialPrompt = true;
+
+        const promptDisplay = document.getElementById('promptDisplay');
+        const statusIndicator = document.getElementById('statusIndicator');
+        
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendButton = document.getElementById('chatSendButton');
+        const chatForm = document.getElementById('chatForm');
+        const loading = document.getElementById('loading');
+
+        function addPromptVersion(prompt, type = 'initial') {
+            promptVersion++;
+            const promptDiv = document.createElement('div');
+            promptDiv.className = `prompt-version ${type}`;
+            
+            const label = document.createElement('div');
+            label.className = 'prompt-label';
+            label.textContent = type === 'initial' ? 'Initial Prompt' : `Updated Prompt (v${promptVersion})`;
+            
+            const text = document.createElement('div');
+            text.className = 'prompt-text';
+            text.textContent = prompt;
+            
+            promptDiv.appendChild(label);
+            promptDiv.appendChild(text);
+            
+            promptDisplay.appendChild(promptDiv);
+            promptDisplay.scrollTop = promptDisplay.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'ready') {
+            statusIndicator.textContent = message;
+            statusIndicator.className = `status-indicator ${type}`;
+        }
+
+        function addMessage(content, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = role === 'user' ? 'You' : 'AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // If this is an AI message with options, show option buttons
+            if (role === 'assistant' && isQuestionWithOptions(content)) {
+                const options = extractOptionsFromResponse(content);
+                if (options.length > 0) {
+                    showOptionButtons(options);
+                }
+            }
+        }
+
+        function showLoading() {
+            loading.classList.add('show');
+            chatSendButton.disabled = true;
+            chatInput.disabled = true;
+        }
+
+        function hideLoading() {
+            loading.classList.remove('show');
+            chatSendButton.disabled = false;
+            chatInput.disabled = false;
+        }
+
+        function isQuestionWithOptions(aiResponse) {
+            const response = aiResponse.toLowerCase();
+            // Check if it's a question (contains ?) and has options, but not an updated prompt
+            return response.includes('?') && response.includes('options:') && !response.includes('updated prompt:');
+        }
+
+        function extractOptionsFromResponse(aiResponse) {
+            const options = [];
+            
+            // Look for the exact format: "Question? Options: A, B, C, D."
+            const optionsMatch = aiResponse.match(/options:\s*([^.!?]+)/i);
+            
+            if (optionsMatch && optionsMatch[1]) {
+                // Split by comma and clean up each option
+                const optionList = optionsMatch[1].split(',').map(opt => opt.trim());
+                
+                // Filter out invalid options
+                const filteredOptions = optionList.filter(opt => 
+                    opt.length >= 2 && 
+                    opt.length <= 50 && 
+                    !opt.toLowerCase().includes('options') &&
+                    !opt.toLowerCase().includes('choices')
+                );
+                
+                if (filteredOptions.length >= 2 && filteredOptions.length <= 6) {
+                    options.push(...filteredOptions);
+                }
+            }
+            
+            return options;
+        }
+
+        function showOptionButtons(options) {
+            // Remove any existing option buttons
+            clearOptionButtons();
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'option-buttons';
+            
+            // Add title
+            const title = document.createElement('div');
+            title.className = 'option-buttons-title';
+            title.textContent = '💡 Quick Select:';
+            buttonContainer.appendChild(title);
+            
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = option;
+                button.onclick = () => {
+                    // Disable all buttons to prevent multiple clicks
+                    const allButtons = buttonContainer.querySelectorAll('.option-button');
+                    allButtons.forEach(btn => btn.classList.add('disabled'));
+                    
+                    // Send the selected option as user response
+                    sendUserResponse(option);
+                };
+                buttonContainer.appendChild(button);
+            });
+            
+            // Insert before the chat input container
+            const chatInputContainer = document.querySelector('.chat-input-container');
+            chatInputContainer.parentNode.insertBefore(buttonContainer, chatInputContainer);
+        }
+
+        function clearOptionButtons() {
+            const existingButtons = document.querySelector('.option-buttons');
+            if (existingButtons) {
+                existingButtons.remove();
+            }
+        }
+
+        async function sendInitialPrompt(prompt) {
+            showLoading();
+            updateStatus('Processing your initial prompt...', 'waiting');
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: prompt,
+                        conversation_history: conversationHistory,
+                        temperature: 0.7,
+                        use_fine_tuned: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Add initial prompt to left panel
+                    addPromptVersion(prompt, 'initial');
+                    currentPrompt = prompt;
+                    
+                    // Add user message to chat
+                    addMessage(prompt, 'user');
+                    
+                    if (data.is_question) {
+                        // AI asked a question with options
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Waiting for your response...', 'waiting');
+                        isWaitingForResponse = true;
+                        isInitialPrompt = false;
+                    } else {
+                        // AI provided an updated prompt directly
+                        if (data.updated_prompt) {
+                            addPromptVersion(data.updated_prompt, 'updated');
+                            currentPrompt = data.updated_prompt;
+                        }
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Ready for next message', 'ready');
+                    }
+                    
+                    conversationHistory = data.conversation_history;
+                } else {
+                    updateStatus('Error: ' + (data.error || 'Unknown error'), 'error');
+                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                }
+            } catch (error) {
+                updateStatus('Connection error. Please check the server.', 'error');
+                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                console.error('Network error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function sendUserResponse(userResponse) {
+            showLoading();
+            updateStatus('Processing your response...', 'waiting');
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: userResponse,
+                        conversation_history: conversationHistory,
+                        temperature: 0.7,
+                        use_fine_tuned: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Add user response to chat
+                    addMessage(userResponse, 'user');
+                    
+                                         if (data.updated_prompt) {
+                         // AI provided an updated prompt
+                         clearOptionButtons();
+                         addPromptVersion(data.updated_prompt, 'updated');
+                         currentPrompt = data.updated_prompt;
+                         
+                         // Show the updated prompt in chat
+                         addMessage(data.response, 'assistant');
+                         
+                         // Continue the conversation by sending the updated prompt back to AI
+                         setTimeout(() => {
+                             continueRefinement(data.updated_prompt);
+                         }, 1000);
+                     } else if (data.is_question) {
+                        // AI asked another question
+                        clearOptionButtons();
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Waiting for your response...', 'waiting');
+                        isWaitingForResponse = true;
+                    } else {
+                        // Regular response
+                        clearOptionButtons();
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Ready for next message', 'ready');
+                        isWaitingForResponse = false;
+                    }
+                    
+                    conversationHistory = data.conversation_history;
+                } else {
+                    updateStatus('Error: ' + (data.error || 'Unknown error'), 'error');
+                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                }
+            } catch (error) {
+                updateStatus('Connection error. Please check the server.', 'error');
+                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                console.error('Network error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function continueRefinement(updatedPrompt) {
+            showLoading();
+            updateStatus('Continuing refinement...', 'waiting');
+            
+            // Safety check: prevent infinite loops
+            if (promptVersion > 20) {
+                addMessage('Maximum prompt iterations reached. Please start a new conversation.', 'assistant');
+                updateStatus('Ready for next message', 'ready');
+                hideLoading();
+                return;
+            }
+            
+            try {
+                // Instead of sending the updated prompt directly, send a continuation message
+                const continuationMessage = `Continue refining this prompt: ${updatedPrompt}`;
+                
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: continuationMessage,
+                        conversation_history: conversationHistory,
+                        temperature: 0.7,
+                        use_fine_tuned: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.is_question) {
+                        // AI asked a new question based on updated prompt
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Waiting for your response...', 'waiting');
+                        isWaitingForResponse = true;
+                        isInitialPrompt = false;
+                        // Stop here and wait for user input
+                    } else if (data.updated_prompt) {
+                        // Another updated prompt - continue the loop
+                        addPromptVersion(data.updated_prompt, 'updated');
+                        currentPrompt = data.updated_prompt;
+                        
+                        // Show the AI's response in chat
+                        addMessage(data.response, 'assistant');
+                        
+                        // Continue with the updated prompt to get next question
+                        setTimeout(() => {
+                            continueRefinement(data.updated_prompt);
+                        }, 1000);
+                    } else {
+                        // If AI didn't ask a question or provide updated prompt, 
+                        // stop and wait for user input
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Ready for next message', 'ready');
+                        isWaitingForResponse = false;
+                        isInitialPrompt = true;
+                    }
+                    
+                    conversationHistory = data.conversation_history;
+                } else {
+                    updateStatus('Error: ' + (data.error || 'Unknown error'), 'error');
+                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                }
+            } catch (error) {
+                updateStatus('Connection error. Please check the server.', 'error');
+                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                console.error('Network error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function resetAll() {
+            conversationHistory = [];
+            currentPrompt = '';
+            isWaitingForResponse = false;
+            promptVersion = 0;
+            isInitialPrompt = true;
+            
+            // Clear displays
+            promptDisplay.innerHTML = '<div class="status-indicator">Ready to start prompt refinement</div>';
+            chatMessages.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hello! I'm your prompt refinement assistant. Type your initial prompt below and I'll ask questions to help refine it. Watch the left panel to see your prompt evolve in real-time.
+                    </div>
+                </div>
+            `;
+            
+            // Clear option buttons
+            clearOptionButtons();
+            
+            // Reset inputs
+            chatInput.value = '';
+            chatInput.disabled = false;
+            chatSendButton.disabled = false;
+            chatInput.placeholder = 'Type your initial prompt or continue refining...';
+            
+            updateStatus('Ready to start prompt refinement');
+        }
+
+        function exportConversation() {
+            const data = {
+                conversation_history: conversationHistory,
+                final_prompt: currentPrompt,
+                timestamp: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'prompt-refinement-export.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            
+            if (message) {
+                if (isInitialPrompt) {
+                    // This is the initial prompt
+                    sendInitialPrompt(message);
+                } else {
+                    // This is a response to AI's question
+                    sendUserResponse(message);
+                }
+                chatInput.value = '';
+            }
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Clear option buttons when user starts typing
+        chatInput.addEventListener('input', () => {
+            const optionButtons = document.querySelectorAll('.option-buttons');
+            optionButtons.forEach(container => {
+                const buttons = container.querySelectorAll('.option-button');
+                buttons.forEach(btn => btn.classList.add('disabled'));
+            });
+        });
+    </script>
+</body>
+</html> 
