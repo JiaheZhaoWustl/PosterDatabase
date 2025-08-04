@@ -3,16 +3,17 @@
   "id": "1525067320470054190",
   "api": "1.0.0",
   "main": "code.js",
-  "capabilities": [],
-  "enableProposedApi": false,
-  "documentAccess": "dynamic-page",
-  "editorType": [
-    "figma"
-  ],
   "ui": "ui.html",
   "networkAccess": {
-    "allowedDomains": [
-      "none"
+    "reasoning": "The plugin sends frame & object data to a local dev server for heat‑map calculations.",
+    "allowedDomains": ["http://localhost:3001", "http://localhost:5000"],
+    "devAllowedDomains": [
+      "http://localhost:3001",
+      "http://localhost:5000"
     ]
-  }
+  },
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "capabilities": [],
+  "enableProposedApi": false
 }

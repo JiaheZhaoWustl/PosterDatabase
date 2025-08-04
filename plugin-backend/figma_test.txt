@@ -1,0 +1,1 @@
+2025-07-23T09:07:27.467Z [info] Frame and child info {"frame":{"id":"569:97","name":"Frame 427318907","width":569,"height":1293},"children":[{"id":"630:7","name":"Star 1","x":22,"y":92,"width":310,"height":310}],"selectedOptions":["title","location","time"]}

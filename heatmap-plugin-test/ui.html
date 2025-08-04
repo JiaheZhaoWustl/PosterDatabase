@@ -1,33 +1,252 @@
-<h2>Rectangle Creator</h2>
-<p>Count: <input id="count" type="number" value="5"></p>
-<button id="create">Create</button>
-<button id="cancel">Cancel</button>
-<button id="send">Send</button>
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      width: 375px;
+      height: 560px;
+      font-family: sans-serif;
+      background: #fff;
+    }
+    
+    h2 {
+      font-family: "SF Pro", -apple-system, sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 0 0 16px 0;
+    }
+    
+    .divider {
+      height: 1px;
+      background-color: #e0e0e0;
+      margin: 0 0 16px 0;
+      width: 100%;
+    }
+    
+    #container {
+      width: 100%;
+      padding: 10px 16px;
+      box-sizing: border-box;
+    }
+    
+    #loading {
+      display: none;
+      margin-top: 10px;
+      text-align: center;
+    }
+    
+    #loading svg {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+    #first-prompt {
+      margin-top: 16px;
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #333;
+      word-break: break-all;
+    }
+    
+    label[for="user-message"] {
+      font-size: 13px;
+      color: #1976d2;
+    }
+    
+    #user-message {
+      width: 100%;
+      margin-top: 4px;
+      resize: vertical;
+      font-size: 13px;
+    }
+    
+    #submit-message {
+      margin-top: 6px;
+    }
+    
+    .options-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-bottom: 16px;
+    }
+    
+    .option-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 4px;
+      margin-bottom: 4px;
+      user-select: none;
+    }
+    
+    .option-box[data-value="title"] {
+      width: 40px;
+    }
+    
+    .option-box[data-value="location"] {
+      width: 50px;
+    }
+    
+    .option-box[data-value="time"] {
+      width: 40px;
+    }
+    
+    .option-box[data-value="host"] {
+      width: 40px;
+    }
+    
+    .option-box[data-value="purpose"] {
+      width: 50px;
+    }
+    
+    .option-box[data-value="other/descriptions"] {
+      width: 110px;
+    }
+    
+    .option-box:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .option-box.selected {
+      background-color: #1976d2;
+      color: white;
+      border-color: #1976d2;
+    }
+    
+    .option-box span {
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+    
+    #send {
+      margin-left: auto;
+      margin-top: 4px;
+      padding: 8px;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+    }
+    
+    #send:hover {
+      background-color: #1565c0;
+    }
+    
+    #send:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+<div id="container">
+  <h2>Generate layout guides</h2>
+  <div class="options-container">
+    <div class="option-box" data-value="title">
+      <span>Title</span>
+    </div>
+    <div class="option-box" data-value="location">
+      <span>Location</span>
+    </div>
+    <div class="option-box" data-value="time">
+      <span>Time</span>
+    </div>
+    <div class="option-box" data-value="host">
+      <span>Host</span>
+    </div>
+    <div class="option-box" data-value="purpose">
+      <span>Purpose</span>
+    </div>
+    <div class="option-box" data-value="other/descriptions">
+      <span>Other / Descriptions</span>
+    </div>
+    <button type="button" id="send">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 2L14 8L12.6 9.4L9 5.8V16H7V5.8L3.4 9.4L2 8L8 2Z"/>
+      </svg>
+    </button>
+  </div>
+    <div class="divider"></div>
+  <h2>Chat to refine prompt</h2>
+  <div id="loading">
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="14" stroke="#888" stroke-width="4" fill="none" opacity="0.2"/>
+      <circle cx="16" cy="16" r="14" stroke="#1976d2" stroke-width="4" fill="none" stroke-dasharray="40 60"/>
+    </svg>
+    <div>Generating heatmaps...</div>
+  </div>
+  <div id="first-prompt" style="display:none;"></div>
+  <div style="margin-top:24px;">
+    <label for="user-message">Chatbot Prompt (future):</label><br>
+    <textarea id="user-message" rows="2"></textarea>
+    <button type="button" id="submit-message">Submit Prompt</button>
+  </div>
+</div>
 <script>
-
-document.getElementById('create').onclick = () => {
-  const textbox = document.getElementById('count');
-  const count = parseInt(textbox.value, 10);
-  parent.postMessage({ pluginMessage: { type: 'create-shapes', count } }, '*')
-}
-
-document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
-}
+const loading = document.getElementById('loading');
+const sendBtn = document.getElementById('send');
+let firstPrompt = '';
+window.onload = () => {
+  loading.style.display = 'none';
+  sendBtn.disabled = false;
+};
+// Add click handlers for option boxes
+document.querySelectorAll('.option-box').forEach(box => {
+  box.addEventListener('click', () => {
+    box.classList.toggle('selected');
+  });
+});
 
 document.getElementById('send').onclick = () => {
-  const count = parseInt(document.getElementById('count').value, 10);
-  console.log('[UI] Send clicked, count =', count);      // NEW
-  parent.postMessage({ pluginMessage: { type: 'send', count } }, '*');
+  const selectedOptions = Array.from(document.querySelectorAll('.option-box.selected')).map(box => box.dataset.value);
+  if (selectedOptions.length === 0) {
+    alert('Please select at least one option.');
+    console.warn('[UI] Send clicked, but no options selected!');
+    return;
+  }
+  parent.postMessage({ pluginMessage: { type: 'send', selectedOptions } }, '*');
+  loading.style.display = 'block';
+  sendBtn.disabled = true;
 };
-
-window.onmessage = (event) => {
-  const msg = event.data.pluginMessage;
-  if (msg?.type === 'frame-data') {
-    console.table(msg.objects); // quick view in DevTools
-    // or fetch('http://localhost:8000/occupancy', { body: JSON.stringify(msg) })
+document.getElementById('submit-message').onclick = () => {
+  const msg = document.getElementById('user-message').value.trim();
+  if (msg && !firstPrompt) {
+    firstPrompt = msg;
+    const fpDiv = document.getElementById('first-prompt');
+    fpDiv.textContent = 'First Prompt: ' + firstPrompt;
+    fpDiv.style.display = 'block';
   }
 };
-
-
+window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (msg?.type === 'loading') {
+    loading.style.display = msg.loading ? 'block' : 'none';
+    sendBtn.disabled = msg.loading;
+  }
+};
 </script>
+</body>
+</html>
