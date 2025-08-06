@@ -1,6 +1,13 @@
 Aug. 4th
 
-1. Midjourney reword when finalized prompt
-2. Skip question button
-3. Hide updated prompt in the chat
-4. show text changes on the left display
+Code --------------------------------
+1. No repetitive questions rule 
+Migrate functionality to Figma
+2. UI style css update
+3. 
+
+Design & Non-code -------------------
+1. Brand guideline and visual color adjustment
+2. Documentation, data viz
+3. Research Reformat
+4. File structure adjustment
