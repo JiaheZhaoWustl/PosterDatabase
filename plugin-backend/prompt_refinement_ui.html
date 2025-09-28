@@ -578,6 +578,7 @@
         let promptVersion = 0;
         let isInitialPrompt = true;
         let isUserEdit = false;
+        let askedQuestions = new Set(); // Track questions asked in current session
 
         const promptDisplay = document.getElementById('promptDisplay');
         const statusIndicator = document.getElementById('statusIndicator');
@@ -759,6 +760,8 @@
                 if (options.length > 0) {
                     showOptionButtons(options);
                 }
+                // Track the question
+                trackQuestion(content);
             }
         }
 
@@ -767,6 +770,104 @@
             // Look for patterns like "Options: A, B, C, D" or "Options: option1, option2"
             const optionsPattern = /\s*[Oo]ptions?:\s*[^.!?]+[.!?]?/g;
             return content.replace(optionsPattern, '').trim();
+        }
+
+        function extractQuestionKey(content) {
+            // Extract a key from the question content for tracking
+            // Remove common variations and focus on the core question
+            let question = content.toLowerCase();
+            
+            // Remove common prefixes and variations
+            question = question.replace(/^(what|which|how|when|where|why|do you|would you|could you|can you)\s+/i, '');
+            question = question.replace(/\?/g, '');
+            question = question.replace(/\s+/g, ' ').trim();
+            
+            // Remove very common words that don't add meaning
+            const commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'];
+            question = question.split(' ').filter(word => !commonWords.includes(word)).join(' ');
+            
+            return question;
+        }
+
+        function isQuestionAlreadyAsked(content) {
+            const questionKey = extractQuestionKey(content);
+            return askedQuestions.has(questionKey);
+        }
+
+        function trackQuestion(content) {
+            const questionKey = extractQuestionKey(content);
+            askedQuestions.add(questionKey);
+        }
+
+        function checkForRepetitiveQuestion(content) {
+            if (isQuestionWithOptions(content)) {
+                const cleanedQuestion = cleanQuestionContent(content);
+                if (isQuestionAlreadyAsked(cleanedQuestion)) {
+                    console.log('Repetitive question detected:', cleanedQuestion);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        async function handleRepetitiveQuestion() {
+            // Send a message to the AI to ask a different question
+            const antiRepetitionMessage = "Please ask a different question that hasn't been asked before in this session.";
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: antiRepetitionMessage,
+                        conversation_history: conversationHistory,
+                        temperature: 0.7,
+                        use_fine_tuned: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.is_question && !checkForRepetitiveQuestion(data.response)) {
+                        // New question received
+                        addMessage(data.response, 'assistant');
+                        updateStatus('Waiting for your response...', 'waiting');
+                        isWaitingForResponse = true;
+                        skipButton.style.display = 'inline-block';
+                    } else if (data.updated_prompt) {
+                        // AI provided an updated prompt instead
+                        addPromptVersion(data.updated_prompt, 'updated');
+                        currentPrompt = data.updated_prompt;
+                        isUserEdit = false;
+                        setTimeout(() => {
+                            continueRefinement(data.updated_prompt);
+                        }, 1000);
+                    } else {
+                        // Fallback: ask user to continue
+                        addMessage("I've asked all the relevant questions. Please continue refining your prompt or let me know if you need any specific changes.", 'assistant');
+                        updateStatus('Ready for next message', 'ready');
+                        isWaitingForResponse = false;
+                        skipButton.style.display = 'none';
+                    }
+                    
+                    conversationHistory = data.conversation_history;
+                } else {
+                    // Fallback message
+                    addMessage("Please continue refining your prompt or let me know if you need any specific changes.", 'assistant');
+                    updateStatus('Ready for next message', 'ready');
+                    isWaitingForResponse = false;
+                    skipButton.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error handling repetitive question:', error);
+                addMessage("Please continue refining your prompt or let me know if you need any specific changes.", 'assistant');
+                updateStatus('Ready for next message', 'ready');
+                isWaitingForResponse = false;
+                skipButton.style.display = 'none';
+            }
         }
 
         function showLoading() {
@@ -881,12 +982,18 @@
                     addMessage(prompt, 'user');
                     
                     if (data.is_question) {
-                        // AI asked a question with options
-                        addMessage(data.response, 'assistant');
-                        updateStatus('Waiting for your response...', 'waiting');
-                        isWaitingForResponse = true;
-                        isInitialPrompt = false;
-                        skipButton.style.display = 'inline-block';
+                        // Check for repetitive questions
+                        if (checkForRepetitiveQuestion(data.response)) {
+                            // Handle repetitive question
+                            await handleRepetitiveQuestion();
+                        } else {
+                            // AI asked a question with options
+                            addMessage(data.response, 'assistant');
+                            updateStatus('Waiting for your response...', 'waiting');
+                            isWaitingForResponse = true;
+                            isInitialPrompt = false;
+                            skipButton.style.display = 'inline-block';
+                        }
                     } else {
                         // AI provided an updated prompt directly
                         if (data.updated_prompt) {
@@ -955,12 +1062,18 @@
                             continueRefinement(data.updated_prompt);
                         }, 1000);
                     } else if (data.is_question) {
-                        // AI asked another question
-                        clearOptionButtons();
-                        addMessage(data.response, 'assistant');
-                        updateStatus('Waiting for your response...', 'waiting');
-                        isWaitingForResponse = true;
-                        skipButton.style.display = 'inline-block';
+                        // Check for repetitive questions
+                        if (checkForRepetitiveQuestion(data.response)) {
+                            // Handle repetitive question
+                            await handleRepetitiveQuestion();
+                        } else {
+                            // AI asked another question
+                            clearOptionButtons();
+                            addMessage(data.response, 'assistant');
+                            updateStatus('Waiting for your response...', 'waiting');
+                            isWaitingForResponse = true;
+                            skipButton.style.display = 'inline-block';
+                        }
                     } else {
                         // Regular response
                         clearOptionButtons();
@@ -1017,13 +1130,19 @@
                 
                 if (response.ok) {
                     if (data.is_question) {
-                        // AI asked a new question based on updated prompt
-                        addMessage(data.response, 'assistant');
-                        updateStatus('Waiting for your response...', 'waiting');
-                        isWaitingForResponse = true;
-                        isInitialPrompt = false;
-                        skipButton.style.display = 'inline-block';
-                        // Stop here and wait for user input
+                        // Check for repetitive questions
+                        if (checkForRepetitiveQuestion(data.response)) {
+                            // Handle repetitive question
+                            await handleRepetitiveQuestion();
+                        } else {
+                            // AI asked a new question based on updated prompt
+                            addMessage(data.response, 'assistant');
+                            updateStatus('Waiting for your response...', 'waiting');
+                            isWaitingForResponse = true;
+                            isInitialPrompt = false;
+                            skipButton.style.display = 'inline-block';
+                            // Stop here and wait for user input
+                        }
                     } else if (data.updated_prompt) {
                         // Another updated prompt - continue the loop
                         addPromptVersion(data.updated_prompt, 'updated');
@@ -1098,11 +1217,17 @@
                     clearOptionButtons();
                     
                     if (data.is_question) {
-                        // AI asked another question
-                        addMessage(data.response, 'assistant');
-                        updateStatus('Waiting for your response...', 'waiting');
-                        isWaitingForResponse = true;
-                        skipButton.style.display = 'inline-block';
+                        // Check for repetitive questions
+                        if (checkForRepetitiveQuestion(data.response)) {
+                            // Handle repetitive question
+                            await handleRepetitiveQuestion();
+                        } else {
+                            // AI asked another question
+                            addMessage(data.response, 'assistant');
+                            updateStatus('Waiting for your response...', 'waiting');
+                            isWaitingForResponse = true;
+                            skipButton.style.display = 'inline-block';
+                        }
                     } else if (data.updated_prompt) {
                         // AI provided an updated prompt
                         addPromptVersion(data.updated_prompt, 'updated');
@@ -1145,6 +1270,7 @@
             promptVersion = 0;
             isInitialPrompt = true;
             isUserEdit = false;
+            askedQuestions.clear(); // Clear asked questions for new session
             
             // Clear displays
             promptDisplay.innerHTML = '<div class="status-indicator">Ready to start prompt refinement</div>';

@@ -1,8 +1,35 @@
 import json
 import re
+import argparse
+import os
+import sys
 from typing import List, Dict, Any
 from difflib import SequenceMatcher
 from collections import Counter
+
+def print_usage_examples():
+    """Print usage examples for the script"""
+    print("\n" + "="*60)
+    print("USAGE EXAMPLES:")
+    print("="*60)
+    print("1. Basic usage with raw Discord data:")
+    print("   python discord_data_cleaner.py my_discord_export.json")
+    print()
+    print("2. Specify custom output file:")
+    print("   python discord_data_cleaner.py my_discord_export.json -o cleaned_data.json")
+    print()
+    print("3. Process already cleaned data:")
+    print("   python discord_data_cleaner.py cleaned_data.json -t cleaned")
+    print()
+    print("4. Create both cleaned and reformatted output:")
+    print("   python discord_data_cleaner.py my_discord_export.json -r")
+    print()
+    print("5. Custom similarity threshold for session grouping:")
+    print("   python discord_data_cleaner.py my_discord_export.json -r -s 0.3")
+    print()
+    print("6. Full example with all options:")
+    print("   python discord_data_cleaner.py my_discord_export.json -o cleaned.json -r -ro reformatted.json -s 0.25")
+    print("="*60)
 
 def extract_user_from_original_content(original_content: str) -> str:
     """
@@ -550,10 +577,69 @@ def reformat_prompts_by_session(input_file: str, output_file: str, similarity_th
         print(f"  {session['user_name']} (Session {session['session_id']}): {len(session['prompts'])} prompts")
 
 if __name__ == "__main__":
-    # Process newbies-41 channel data (raw Discord data)
-    input_file = "Midjourney - Newcomer Rooms - newbies-41 [990816772108202044] (after 2025-07-17).json"
-    output_file = "newbies-41_user_prompts_only.json"
-    clean_raw_discord_data(input_file, output_file)
+    parser = argparse.ArgumentParser(
+        description='Clean Discord data and extract user prompts for training datasets',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s my_discord_export.json
+  %(prog)s my_discord_export.json -r -s 0.3
+  %(prog)s cleaned_data.json -t cleaned -o processed.json
+        """
+    )
+    parser.add_argument('input_file', help='Path to the input Discord data file')
+    parser.add_argument('--output', '-o', default=None, help='Output file path (default: input_file_cleaned.json)')
+    parser.add_argument('--reformat', '-r', action='store_true', help='Also create reformatted session-based output')
+    parser.add_argument('--reformat-output', default=None, help='Reformatted output file path (default: input_file_reformatted.json)')
+    parser.add_argument('--similarity-threshold', '-s', type=float, default=0.2, 
+                       help='Similarity threshold for session grouping (default: 0.2)')
+    parser.add_argument('--data-type', '-t', choices=['raw', 'cleaned'], default='raw',
+                       help='Type of input data: raw Discord export or already cleaned data (default: raw)')
+    parser.add_argument('--examples', action='store_true', help='Show detailed usage examples')
     
-    # Also create the reformatted version
-    reformat_prompts_by_session(output_file, "newbies-41_user_prompts_reformatted.json") 
+    args = parser.parse_args()
+    
+    # Show examples if requested
+    if args.examples:
+        print_usage_examples()
+        sys.exit(0)
+    
+    # Validate input file exists
+    if not os.path.exists(args.input_file):
+        print(f"Error: Input file '{args.input_file}' not found.")
+        print("Use --examples to see usage examples.")
+        exit(1)
+    
+    # Generate output file names if not specified
+    base_name = os.path.splitext(args.input_file)[0]
+    if args.output is None:
+        args.output = f"{base_name}_cleaned.json"
+    
+    if args.reformat and args.reformat_output is None:
+        args.reformat_output = f"{base_name}_reformatted.json"
+    
+    print(f"Processing file: {args.input_file}")
+    print(f"Data type: {args.data_type}")
+    print(f"Output file: {args.output}")
+    if args.reformat:
+        print(f"Reformatted output: {args.reformat_output}")
+    print(f"Similarity threshold: {args.similarity_threshold}")
+    print("-" * 50)
+    
+    # Process the data based on type
+    if args.data_type == 'raw':
+        print("Processing raw Discord data...")
+        clean_raw_discord_data(args.input_file, args.output)
+    else:
+        print("Processing cleaned Discord data...")
+        clean_discord_data(args.input_file, args.output)
+    
+    # Create reformatted version if requested
+    if args.reformat:
+        print("\nCreating reformatted session-based output...")
+        reformat_prompts_by_session(args.output, args.reformat_output, args.similarity_threshold)
+    
+    print(f"\nProcessing complete!")
+    print(f"Cleaned data saved to: {args.output}")
+    if args.reformat:
+        print(f"Reformatted data saved to: {args.reformat_output}") 

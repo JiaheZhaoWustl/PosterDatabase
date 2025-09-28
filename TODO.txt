@@ -10,4 +10,9 @@ Design & Non-code -------------------
 1. Brand guideline and visual color adjustment
 2. Documentation, data viz
 3. Research Reformat
-4. File structure adjustment
+
+
+Long term --------------------------
+1. update readme
+2. File structure adjustment
+3. 
